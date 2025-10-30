@@ -52,13 +52,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      #Login against a Docker registry except on PR
+      #https://github.com/docker/login-action
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
       # Verify package registry permissions before building
       - name: Verify GHCR permissions
         if: github.event_name != 'pull_request'
         run: |
-          echo "Testing GitHub Container Registry authentication and permissions..."
-          echo "${{ github.token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          echo "✅ Successfully authenticated to GHCR"
+          echo "Testing GitHub Container Registry write permissions..."
           echo ""
           echo "Repository: ${{ github.repository }}"
           echo "Actor: ${{ github.actor }}"
