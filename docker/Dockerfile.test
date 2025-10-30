@@ -1,0 +1,6 @@
+FROM alpine:latest
+
+# Minimal test image to verify GHCR permissions
+RUN echo "This is a test image for verifying GHCR write permissions" > /test.txt
+
+CMD ["cat", "/test.txt"]
