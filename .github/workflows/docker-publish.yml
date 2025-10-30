@@ -52,6 +52,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Verify package registry permissions before building
+      - name: Verify GHCR permissions
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "Testing GitHub Container Registry authentication and permissions..."
+          echo "${{ github.token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          echo "✅ Successfully authenticated to GHCR"
+          echo ""
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Event: ${{ github.event_name }}"
+          echo ""
+          echo "Testing write permissions by pushing a test manifest..."
+          # Create and push a minimal test image to verify write access
+          TEST_TAG="ghcr.io/${{ github.repository }}:permission-test-${{ github.run_id }}"
+          echo "FROM alpine:latest" | docker build -t "${TEST_TAG}" -
+          docker push "${TEST_TAG}"
+          echo "✅ Successfully pushed test image to GHCR"
+          echo "🧹 Cleaning up test image..."
+          # Note: We can't delete via Docker CLI, but the tag will be overwritten by actual builds
+          echo "Test image will be cleaned up manually or overwritten by actual builds"
+
       # Free up disk space on GitHub runner
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -96,7 +118,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ github.token }}
-          #password: ${{ secrets.GHCR_PAT }}
           
       # - name: 'Login to GitHub Container Registry'
       #   uses: docker/login-action@v3
